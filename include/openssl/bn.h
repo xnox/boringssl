@@ -261,6 +261,7 @@ OPENSSL_EXPORT size_t BN_bn2bin(const BIGNUM *in, uint8_t *out);
 // |BIGNUM| is allocated and returned. It returns NULL on allocation
 // failure.
 OPENSSL_EXPORT BIGNUM *BN_le2bn(const uint8_t *in, size_t len, BIGNUM *ret);
+#define BN_lebin2bn BN_le2bn
 
 // BN_bn2le_padded serialises the absolute value of |in| to |out| as a
 // little-endian integer, which must have |len| of space available, padding
@@ -973,6 +974,12 @@ OPENSSL_EXPORT int BN_MONT_CTX_set(BN_MONT_CTX *mont, const BIGNUM *mod,
 //
 // Use |BN_bn2bin_padded| instead. It is |size_t|-clean.
 OPENSSL_EXPORT int BN_bn2binpad(const BIGNUM *in, uint8_t *out, int len);
+
+// BN_bn2lebinpad behaves like |BN_bn2le_padded|, but it returns |len| on
+// success and -1 on error.
+//
+// Use |BN_bn2le_padded| instead. It is |size_t|-clean.
+OPENSSL_EXPORT int BN_bn2lebinpad(const BIGNUM *in, uint8_t *out, int len);
 
 // BN_prime_checks is a deprecated alias for |BN_prime_checks_for_validation|.
 // Use |BN_prime_checks_for_generation| or |BN_prime_checks_for_validation|
