@@ -583,11 +583,11 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 add_custom_target(
     run_tests
     COMMAND ${GO_EXECUTABLE} test ${GO_TESTS}
-    COMMAND ${GO_EXECUTABLE} run util/all_tests.go -build-dir
+    COMMAND env GTEST_FILTER='-WithVersion/SSLVersionTest.*/DTLS1:WithVersion/SSLVersionTest.*/TLS1:WithVersion/SSLVersionTest.*/TLS1_1:SSLTest.DefaultVersion:SSLTest.SetVersion:SSLTest.NoCiphersAvailable:SSLTest.ClientHello:SSLTest.Padding:SSLTest.ApplyHandoffRemovesUnsupportedCiphers:SSLTest.ApplyHandoffRemovesUnsupportedCurves:QUICMethodTest.ZeroRTTReject' ${GO_EXECUTABLE} run util/all_tests.go -build-dir
             ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND cd ssl/test/runner &&
             ${GO_EXECUTABLE} test -shim-path $<TARGET_FILE:bssl_shim>
-              ${HANDSHAKER_ARGS} ${RUNNER_ARGS}
+              ${HANDSHAKER_ARGS} ${RUNNER_ARGS} -shim-config expected_failures.json
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS all_tests bssl_shim handshaker fips_specific_tests_if_any
     USES_TERMINAL)

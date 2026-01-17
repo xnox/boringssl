@@ -576,13 +576,20 @@ SSL_CTX *SSL_CTX_new(const SSL_METHOD *method) {
     return nullptr;
   }
 
-  if (!SSL_CTX_set_strict_cipher_list(ret.get(), SSL_DEFAULT_CIPHER_LIST) ||
-      // Lock the SSL_CTX to the specified version, for compatibility with
-      // legacy uses of SSL_METHOD.
-      !SSL_CTX_set_max_proto_version(ret.get(), method->version) ||
-      !SSL_CTX_set_min_proto_version(ret.get(), method->version)) {
-    OPENSSL_PUT_ERROR(SSL, ERR_R_INTERNAL_ERROR);
-    return nullptr;
+  if (!method->version) {
+      if (!SSL_CTX_set_compliance_policy(ret.get(), ssl_compliance_policy_fips_202205)) {
+          OPENSSL_PUT_ERROR(SSL, ERR_R_INTERNAL_ERROR);
+          return nullptr;
+      }
+  } else {
+      if (!SSL_CTX_set_strict_cipher_list(ret.get(), SSL_DEFAULT_CIPHER_LIST) ||
+          // Lock the SSL_CTX to the specified version, for compatibility with
+          // legacy uses of SSL_METHOD.
+          !SSL_CTX_set_max_proto_version(ret.get(), method->version) ||
+          !SSL_CTX_set_min_proto_version(ret.get(), method->version)) {
+          OPENSSL_PUT_ERROR(SSL, ERR_R_INTERNAL_ERROR);
+          return nullptr;
+      }
   }
 
   return ret.release();
@@ -3262,8 +3269,8 @@ static int Configure(SSL_CTX *ctx) {
       // configured to use TLS 1.2 and should be configured to use TLS 1.3
       // as well. These servers should not be configured to use TLS 1.1 and
       // shall not use TLS 1.0, SSL 3.0, or SSL 2.0.
-      SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION) &&
-      SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION) &&
+      SSL_CTX_set_min_proto_version(ctx, ctx->method->is_dtls ? DTLS1_2_VERSION : TLS1_2_VERSION) &&
+      SSL_CTX_set_max_proto_version(ctx, ctx->method->is_dtls ? DTLS1_2_VERSION : TLS1_3_VERSION) &&
       // Sections 3.3.1.1.1 and 3.3.1.1.2 are ambiguous about whether
       // HMAC-SHA-1 cipher suites are permitted with TLS 1.2. However, later the
       // Encrypt-then-MAC extension is required for all CBC cipher suites and so
