@@ -3417,13 +3417,19 @@ static int Configure(SSL_CTX *ctx) {
   ctx->compliance_policy = ssl_compliance_policy_fips_202205;
 
   return
+      // Section 1.2:
+      // "Datagram TLS (DTLS), which operates over datagram protocols,
+      // is outside the scope of these guidelines. NIST may issue
+      // separate guidelines for DTLS at a later date." However
+      // DTLSv1.2 AEAD ciphers are used the same as TLSv1.2, hence
+      // configure DTLS to similar groups.
       // Section 3.1:
       // "Servers that support government-only applications shall be
       // configured to use TLS 1.2 and should be configured to use TLS 1.3
       // as well. These servers should not be configured to use TLS 1.1 and
-      // shall not use TLS 1.0, SSL 3.0, or SSL 2.0.
-      SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION) &&
-      SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION) &&
+      // shall not use TLS 1.0, SSL 3.0, or SSL 2.0."
+      SSL_CTX_set_min_proto_version(ctx, ctx->method->is_dtls ? DTLS1_2_VERSION : TLS1_2_VERSION) &&
+      SSL_CTX_set_max_proto_version(ctx, ctx->method->is_dtls ? DTLS1_2_VERSION : TLS1_3_VERSION) &&
       // Sections 3.3.1.1.1 and 3.3.1.1.2 are ambiguous about whether
       // HMAC-SHA-1 cipher suites are permitted with TLS 1.2. However, later the
       // Encrypt-then-MAC extension is required for all CBC cipher suites and so
@@ -3438,8 +3444,8 @@ static int Configure(SSL *ssl) {
   ssl->config->compliance_policy = ssl_compliance_policy_fips_202205;
 
   // See |Configure(SSL_CTX)|, above, for reasoning.
-  return SSL_set_min_proto_version(ssl, TLS1_2_VERSION) &&
-         SSL_set_max_proto_version(ssl, TLS1_3_VERSION) &&
+  return SSL_set_min_proto_version(ssl, SSL_is_dtls(ssl) ? DTLS1_2_VERSION : TLS1_2_VERSION) &&
+         SSL_set_max_proto_version(ssl, SSL_is_dtls(ssl) ? DTLS1_2_VERSION : TLS1_3_VERSION) &&
          SSL_set_strict_cipher_list(ssl, kTLS12Ciphers) &&
          SSL_set1_group_ids(ssl, kGroups, std::size(kGroups)) &&
          SSL_set_signing_algorithm_prefs(ssl, kSigAlgs, std::size(kSigAlgs)) &&
